@@ -1,0 +1,66 @@
+# Python 字节码与缓存
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+# 虚拟环境及本机环境变量；允许提交不含秘密的示例配置
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.*
+!.env.example
+!.env.sample
+.python-version
+
+# 构建、打包与测试覆盖率产物
+/build/
+/dist/
+.eggs/
+*.egg-info/
+.coverage
+.coverage.*
+/htmlcov/
+/coverage.xml
+
+# IDE 私有文件；只保留本项目共享的 VS Code 配置
+.idea/
+/.vscode/*
+!/.vscode/launch.json
+!/.vscode/settings.json
+*.code-workspace
+.history/
+
+# 本地参考资料、旧归档和实验输出
+/.local/
+/reference/
+/outputs/
+*.zip
+
+# 载体可由 GUI/CLI 保存到任意位置；只提交四幅原始示例 BMP
+*.[bB][mM][pP]
+!/samples/4X2.bmp
+!/samples/4X4.bmp
+!/samples/gray256.bmp
+!/samples/color256.bmp
+*.lsb.json
+
+# 日志、临时文件、编辑器备份与系统杂项
+*.log
+*.tmp
+*.temp
+*.bak
+*~
+.*.swp
+.*.swo
+~$*
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
