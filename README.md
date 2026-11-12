@@ -51,17 +51,25 @@ bmp-lsb-steganography/
 ├── main.py                  # IDE 运行入口及命令行
 ├── gui.py                   # Tkinter 图形界面
 ├── bmp_lsb.py               # BMP 解析与 LSB 算法
+├── length_header.py         # 图内长度头（容量 ≥ 5 字节时启用）
 ├── carrier_metadata.py      # 配套长度记录的保存与校验
 ├── make_samples.py          # 手工生成样例 BMP
 ├── verify_project.py        # GUI 流程与磁盘读写自检
 ├── run.bat                  # Windows 启动脚本
+├── tools/
+│   ├── bmp_probe.py         # 素材头部探测（只读 54 字节）
+│   └── verify_fixtures.py   # 教师素材全量回归 + 第 27 页用例
 ├── tests/
 │   ├── __init__.py
 │   ├── test_lsb.py          # unittest 核心测试
-│   └── test_metadata.py     # 长度记录测试
+│   ├── test_metadata.py     # 长度记录测试
+│   ├── test_length_header.py     # 图内长度头测试
+│   └── test_teacher_fixtures.py  # 教师素材回归（无素材时自动跳过）
 ├── samples/                 # 四幅可直接使用的原始示例 BMP
 ├── docs/
 │   ├── 作业要求与算法说明.md
+│   ├── 接口约定.md          # 底座冻结接口与放宽校验的理由
+│   ├── 素材核查.md          # 34 张教师素材的解析结果与容量
 │   └── 实验结果.md
 ├── .vscode/                 # 可共享的运行与测试配置
 ├── .github/workflows/       # GitHub Actions 核心测试
@@ -87,7 +95,16 @@ python -m unittest discover -s tests -v
 
 `python make_samples.py` 可重新生成四幅原始示例图。`python verify_project.py` 会启动自动关闭的测试窗口，验证界面流程、保存后重新读取提取，并更新 `docs/实验结果.md`。
 
-测试覆盖小图指定用例、超长拒绝、UTF-8、两种位深、两种扫描方向、灰度调色板映射、满容量、文件头和异常输入。GitHub Actions 在推送或创建拉取请求后运行核心测试；GUI 自检在带 Tkinter 的桌面环境中手动运行。
+教师素材相关（需要本机有“可供选用的图片”目录，否则相关测试自动跳过）：
+
+```bash
+python tools/bmp_probe.py --fail-only    # 只看解析器会拒收/需特殊处理的图
+python tools/verify_fixtures.py          # 34 张全量解析 + 第 27 页三用例 + 尾随字节，写 docs/素材核查.md
+```
+
+测试覆盖小图指定用例、超长拒绝、UTF-8、两种位深、两种扫描方向、灰度调色板映射、满容量、文件头和异常输入、图内长度头，以及教师素材回归（4X2/4X4 真实图用例、`biSizeImage` 误写、尾随字节保留）。GitHub Actions 在推送或创建拉取请求后运行核心测试；GUI 自检在带 Tkinter 的桌面环境中手动运行。
+
+底座接口与两处放宽校验的理由见 [接口约定](docs/接口约定.md)：`bmp_lsb.py` 已冻结，新增实验能力一律新建模块。
 
 ## 上传 GitHub
 

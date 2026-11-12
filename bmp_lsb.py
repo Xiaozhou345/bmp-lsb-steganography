@@ -1,4 +1,14 @@
-"""手工解析 BMP 的单比特 LSB 隐写。仅使用 Python 标准库。"""
+"""手工解析 BMP 的单比特 LSB 隐写。仅使用 Python 标准库。
+
+校验策略针对教师素材做了两处放宽，理由见 docs/接口约定.md：
+
+1. ``biSizeImage``（DIB 头偏移 34）在 BI_RGB 下不是必需字段，实测教师提供的
+   8 位灰度小图统一写成 ``宽 × 高 × 3``（按每像素 3 字节误算），因此接受
+   ``0``、``stride × 高``、``宽 × 高 × 3`` 三种取值，像素区实际边界一律以
+   ``bfOffBits + stride × 高`` 为准。
+2. ``bfSize``（文件头偏移 2）允许比文件长度少若干填充字节，实测教师素材最多
+   少 2 字节；尾随字节原样保留，不参与嵌入也不参与提取。
+"""
 from dataclasses import dataclass
 import math
 from pathlib import Path
@@ -37,7 +47,11 @@ class BMP:
         needed = stride * abs(height)
         if offset < 14 + dib or offset + needed > len(data):
             raise BMPError('像素偏移非法或像素数据被截断。')
-        if size != len(data) or image_size not in (0, needed):
+        # bfSize 允许比实际文件短（写入器补的尾部填充），但不得短于像素区末端。
+        if not offset + needed <= size <= len(data):
+            raise BMPError('BMP 文件大小或像素数据大小字段不正确。')
+        # biSizeImage 接受 0、真实像素区大小，以及被写成“每像素 3 字节”的情况。
+        if image_size not in (0, needed, width * height * 3):
             raise BMPError('BMP 文件大小或像素数据大小字段不正确。')
         palette = ()
         if bpp == 8:
@@ -71,6 +85,16 @@ class BMP:
     @property
     def capacity(self):
         return self.sample_count // 8
+
+    @property
+    def pixel_end(self):
+        """像素区最后一个字节之后的位置，由 bfOffBits 与行距推算。"""
+        return self.offset + self.stride * self.height
+
+    @property
+    def trailing_bytes(self):
+        """文件尾部不参与像素读取的多余字节数（教师素材最多 2 字节）。"""
+        return len(self.data) - self.pixel_end
 
     def positions(self):
         """按文件存储顺序逐行遍历；24 位图为 B、G、R；不使用行填充。"""
@@ -142,6 +166,7 @@ class BMP:
                 'type': '256 灰度图' if self.bpp == 8 else '24 位真彩图',
                 'capacity_bytes': self.capacity, 'raw_capacity_bits': self.sample_count,
                 'pixel_offset': self.offset, 'row_stride': self.stride,
+                'trailing_bytes': self.trailing_bytes,
                 'storage': '从上到下' if self.signed_height < 0 else '从下到上'}
 
 
