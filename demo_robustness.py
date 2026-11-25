@@ -37,8 +37,7 @@ import numpy as np
 from bmp_lsb import BMP, analyze
 from robustness import (compare_payload, crop, crop_layout, embed_at_plane,
                         extract_at_plane, jpeg_bit_plane_table, jpeg_survival)
-from tools.jpeg_roundtrip import (decode_jpeg, encode_bmp_to_jpeg,
-                                  jpeg_roundtrip)
+from tools.jpeg_roundtrip import jpeg_roundtrip
 
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT = Path(__file__).resolve().parent

@@ -149,13 +149,6 @@ def compare_payload(expected, actual):
     }
 
 
-def describe(carrier, length):
-    """按给定字节数提取并尽量解码成可读文本，供终端输出/报告引用。"""
-    raw = carrier.extract(length)
-    return {'raw': raw, 'text': raw.decode('utf-8', 'replace'),
-            'preview': raw[:12].hex(' ')}
-
-
 # --------------------------------------------------------------------------
 # 3. 位平面：把消息写到第 n 位，用来说明"鲁棒性来自比特位置，而不是来自
 #    某个实现细节"
