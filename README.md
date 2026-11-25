@@ -53,24 +53,31 @@ bmp-lsb-steganography/
 ├── bmp_lsb.py               # BMP 解析与 LSB 算法
 ├── length_header.py         # 图内长度头（容量 ≥ 5 字节时启用）
 ├── carrier_metadata.py      # 配套长度记录的保存与校验
+├── keyed_lsb.py             # 带密钥随机间隔 LSB（附加④）
+├── robustness.py            # JPEG 往返 / 剪裁的鲁棒性度量（附加②③）
+├── demo_keyed.py            # 附加④ 实验演示
+├── demo_robustness.py       # 附加②③ 实验演示
 ├── make_samples.py          # 手工生成样例 BMP
 ├── verify_project.py        # GUI 流程与磁盘读写自检
 ├── run.bat                  # Windows 启动脚本
 ├── tools/
 │   ├── bmp_probe.py         # 素材头部探测（只读 54 字节）
+│   ├── jpeg_roundtrip.py    # 纯标准库基线 JPEG 编解码（复现画图另存步骤）
 │   └── verify_fixtures.py   # 教师素材全量回归 + 第 27 页用例
 ├── tests/
 │   ├── __init__.py
 │   ├── test_lsb.py          # unittest 核心测试
 │   ├── test_metadata.py     # 长度记录测试
 │   ├── test_length_header.py     # 图内长度头测试
+│   ├── test_keyed.py        # 带密钥随机间隔测试
+│   ├── test_robustness.py   # JPEG 往返 / 剪裁测试
 │   └── test_teacher_fixtures.py  # 教师素材回归（无素材时自动跳过）
 ├── samples/                 # 四幅可直接使用的原始示例 BMP
 ├── docs/
 │   ├── 作业要求与算法说明.md
 │   ├── 接口约定.md          # 底座冻结接口与放宽校验的理由
-│   ├── 素材核查.md          # 34 张教师素材的解析结果与容量
-│   └── 实验结果.md
+│   ├── 第6章_压缩与剪裁.md  # 附加②③ 的方法、结果与分析
+│   └── figs/                # 第 6 章的插图（PNG/JPEG）
 ├── .vscode/                 # 可共享的运行与测试配置
 ├── .github/workflows/       # GitHub Actions 核心测试
 ├── .gitattributes
@@ -93,16 +100,27 @@ python main.py analyze samples/4X4.bmp demo_two_chars.bmp
 python -m unittest discover -s tests -v
 ```
 
-`python make_samples.py` 可重新生成四幅原始示例图。`python verify_project.py` 会启动自动关闭的测试窗口，验证界面流程、保存后重新读取提取，并更新 `docs/实验结果.md`。
+`python make_samples.py` 可重新生成四幅原始示例图。`python verify_project.py` 会启动自动关闭的测试窗口，验证界面流程、保存后重新读取提取，并重新生成 `docs/实验结果.md`（该文件由脚本产生，仓库里不保留）。
+
+附加实验相关（第 5～7 章，产物写入被 Git 忽略的 `outputs/`）：
+
+```bash
+python -X utf8 demo_robustness.py        # 附加②③：JPEG 质量/比特平面/剪裁矩阵 + 插图
+python -X utf8 demo_keyed.py             # 附加④：密钥随机间隔 LSB + 插图
+python -X utf8 tools/jpeg_roundtrip.py --input outputs/B/carrier_hidden.bmp \
+    --jpeg outputs/B/round.jpg --bmp outputs/B/round.bmp --quality 90
+```
+
+`tools/jpeg_roundtrip.py` 用标准库实现基线 JPEG 编解码，只为复现"画图另存 JPEG"这一步；隐写与提取仍走 `bmp_lsb.py`，不引入任何图像库。
 
 教师素材相关（需要本机有“可供选用的图片”目录，否则相关测试自动跳过）：
 
 ```bash
 python tools/bmp_probe.py --fail-only    # 只看解析器会拒收/需特殊处理的图
-python tools/verify_fixtures.py          # 34 张全量解析 + 第 27 页三用例 + 尾随字节，写 docs/素材核查.md
+python tools/verify_fixtures.py          # 34 张全量解析 + 第 27 页三用例 + 尾随字节，重新生成 docs/素材核查.md
 ```
 
-测试覆盖小图指定用例、超长拒绝、UTF-8、两种位深、两种扫描方向、灰度调色板映射、满容量、文件头和异常输入、图内长度头，以及教师素材回归（4X2/4X4 真实图用例、`biSizeImage` 误写、尾随字节保留）。GitHub Actions 在推送或创建拉取请求后运行核心测试；GUI 自检在带 Tkinter 的桌面环境中手动运行。
+测试覆盖小图指定用例、超长拒绝、UTF-8、两种位深、两种扫描方向、灰度调色板映射、满容量、文件头和异常输入、图内长度头、带密钥随机间隔、JPEG 往返与剪裁（含纯标准库 JPEG 编解码器回归），以及教师素材回归（4X2/4X4 真实图用例、`biSizeImage` 误写、尾随字节保留）。GitHub Actions 在推送或创建拉取请求后运行核心测试；GUI 自检在带 Tkinter 的桌面环境中手动运行。
 
 底座接口与两处放宽校验的理由见 [接口约定](docs/接口约定.md)：`bmp_lsb.py` 已冻结，新增实验能力一律新建模块。
 
@@ -116,4 +134,4 @@ python tools/verify_fixtures.py          # 34 张全量解析 + 第 27 页三用
 
 ## 要求与分析
 
-见 [作业要求与算法说明](docs/作业要求与算法说明.md) 和 [实测结果](docs/实验结果.md)。
+见 [作业要求与算法说明](docs/作业要求与算法说明.md)、[接口约定](docs/接口约定.md) 与 [第 6 章 压缩与剪裁](docs/第6章_压缩与剪裁.md)。`docs/实验结果.md` 与 `docs/素材核查.md` 由脚本重新生成。
